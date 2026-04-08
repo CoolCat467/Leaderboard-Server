@@ -1,0 +1,35 @@
+{% extends "base.html.jinja" %}
+{% block title %}{{ leaderboard.title | escape }}{% endblock title %}
+{% block body %}
+<div class="box">
+  <table>
+    <caption>Current Teams</caption>
+    <thead>
+      <tr>
+        {% for header_element in ('Place', 'Team Name', 'Complete') %}
+        <th>{{ header_element }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for team in leaderboard.teams %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ team.title | escape }}</td>
+        <td>{{ team.complete }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="box">
+  <b>Create a New Team</b>
+  <form name="create_team" method="post">
+    <label for="team_title">Title</label>
+    <input id="team_title" name="team_title" size="30" maxlength="30" required="true"><br>
+    <input type="submit" id="create_team_submit_button" name="create_team_submit_button" value="Create">
+  </form>
+</div>
+<hr>
+<a href="/"><button>View / Create Leaderboard</button></a>
+{% endblock body %}
