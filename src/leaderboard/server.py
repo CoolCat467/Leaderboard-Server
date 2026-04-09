@@ -26,8 +26,10 @@ __license__ = "GNU General Public License Version 3"
 
 import dataclasses
 import functools
+import math
 import socket
 import sys
+import time
 import traceback
 from collections.abc import (
     AsyncIterator,
@@ -208,17 +210,11 @@ def find_ip() -> str:
     return candidates[0]
 
 
-class TeamStateEnum(IntEnum):
-    """Team State Enum."""
-
-    CREATED = 0
-    COMPLETED = auto()
-
-
 @dataclasses.dataclass
 class Team:
     """Team in a Leaderboard."""
 
+    id_: int
     title: str
     complete: bool = False
     end_time: int = 0
@@ -240,6 +236,7 @@ class Leaderboard:
     state: BoardStateEnum = BoardStateEnum.CREATED
     teams: list[Team] = dataclasses.field(default_factory=list)
     start_time: int = 0
+    next_team_id: int = 0
 
 
 class AppData(TypedDict):
@@ -324,6 +321,14 @@ async def leaderboard_get(leaderboard_uuid: UUID) -> AsyncIterator[str]:
     )
 
 
+def parse_int_or_none(value: str) -> int | None:
+    """Return parsed integer or None."""
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
 @app.post("/leaderboard/<uuid:leaderboard_uuid>")
 @pretty_exception
 async def leaderboard_post(leaderboard_uuid: UUID) -> AsyncIterator[str]:
@@ -341,13 +346,36 @@ async def leaderboard_post(leaderboard_uuid: UUID) -> AsyncIterator[str]:
     multi_dict = await request.form
     data = multi_dict.to_dict()
 
+    leaderboard_timer_start = "start_leaderboard_timer" in data
+    leaderboard_timer_stop = "stop_leaderboard_timer" in data
     team_title = data.get("team_title", "").strip()
+    team_stop = parse_int_or_none(data.get("team_stop", ""))
+    team_complete_index: int | None = None
 
     max_title_length = 30
 
     errors = []
-    if team_title:
-        if len(team_title) > max_title_length:
+    if leaderboard_timer_start:
+        if leaderboard.state != BoardStateEnum.CREATED:
+            errors.append(
+                "Cannot start leaderboard timer if leaderboard not in <code>created</code> state.",
+            )
+        elif not leaderboard.teams:
+            errors.append(
+                "Cannot start leaderboard timer if leaderboard has no teams.",
+            )
+    elif (
+        leaderboard_timer_stop and leaderboard.state != BoardStateEnum.RUNNING
+    ):
+        errors.append(
+            "Cannot stop leaderboard timer if leaderboard not in <code>running</code> state.",
+        )
+    elif team_title:
+        if leaderboard.state != BoardStateEnum.CREATED:
+            errors.append(
+                "Cannot create a team while leaderboard timer is running.",
+            )
+        elif len(team_title) > max_title_length:
             errors.append(
                 f"Max length of team title is <code>{max_title_length}</code>.",
             )
@@ -357,6 +385,22 @@ async def leaderboard_post(leaderboard_uuid: UUID) -> AsyncIterator[str]:
                 if team.title == team_title:
                     errors.append("Team with given title already exists.")
                     team_title = None
+                    break
+    elif team_stop is not None:
+        if leaderboard.state != BoardStateEnum.RUNNING:
+            errors.append(
+                "Cannot stop leaderboard timer if leaderboard not in <code>running</code> state.",
+            )
+        elif team_stop < 0 or team_stop > len(leaderboard.teams):
+            errors.append("Team id out of bounds.")
+        else:
+            for team_complete_index, team in enumerate(leaderboard.teams):
+                if team.id_ == team_stop:
+                    team_complete_index = team_complete_index
+                    break
+            else:
+                errors.append("Team with given id does not exist.")
+                team_complete_index = None
 
     if errors:
         return await get_exception_page(
@@ -366,12 +410,43 @@ async def leaderboard_post(leaderboard_uuid: UUID) -> AsyncIterator[str]:
             request.url,
         )
 
-    if team_title:
-        leaderboard.teams.append(Team(team_title))
+    if leaderboard_timer_start:
+        assert leaderboard.state == BoardStateEnum.CREATED
+        leaderboard.start_time = time.perf_counter()
+        leaderboard.state = BoardStateEnum.RUNNING
 
-        return app.redirect(f"/leaderboard/{leaderboard_uuid}")
+    elif leaderboard_timer_stop:
+        assert leaderboard.state == BoardStateEnum.RUNNING
+        leaderboard.state = BoardStateEnum.COMPLETED
 
-    return data
+    elif team_title:
+        assert leaderboard.state == BoardStateEnum.CREATED
+        leaderboard.teams.append(Team(leaderboard.next_team_id, team_title))
+        leaderboard.next_team_id += 1
+
+    elif team_complete_index is not None:
+        assert leaderboard.state == BoardStateEnum.RUNNING
+        team = leaderboard.teams[team_complete_index]
+
+        team.end_time = time.perf_counter()
+        team.complete = True
+
+        leaderboard.teams.sort(
+            key=lambda team: team.end_time if team.complete else math.inf,
+        )
+
+        if all(team.complete for team in leaderboard.teams):
+            leaderboard.state = BoardStateEnum.COMPLETED
+
+    else:
+        return await get_exception_page(
+            400,  # bad request
+            "Bad Request",
+            "POST request with no valid actions to perform.",
+            request.url,
+        )
+
+    return app.redirect(f"/leaderboard/{leaderboard_uuid}")
 
 
 def run_server(

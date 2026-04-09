@@ -398,6 +398,93 @@ def generate_leaderboard_get() -> str:
     """Generate /leaderboard GET page."""
     title = htmlgen.jinja_expression("leaderboard.title | escape")
 
+    team_id = htmlgen.jinja_expression("team.id_")
+
+    stop_team_form = htmlgen.form(
+        f"team_{team_id}",
+        "\n".join(
+            (
+                htmlgen.input_field(
+                    "team_stop",
+                    None,
+                    field_type="hidden",
+                    attrs={"value": team_id},
+                ),
+                htmlgen.input_field(
+                    f"submit_{team_id}",
+                    None,
+                    field_type="submit",
+                    attrs={"value": "Stop"},
+                ),
+            ),
+        ),
+    )
+
+    teams_table_body = htmlgen.jinja_table_row(
+        ("team",),
+        "leaderboard.teams",
+        "\n".join(
+            (
+                htmlgen.wrap_tag(
+                    "td",
+                    htmlgen.jinja_expression("loop.index"),
+                    block=False,
+                ),
+                htmlgen.wrap_tag(
+                    "td",
+                    htmlgen.jinja_expression("team.title|escape"),
+                    block=False,
+                ),
+                # htmlgen.wrap_tag("td", htmlgen.jinja_expression("team.complete"), block=False),
+                htmlgen.jinja_if_block(
+                    {
+                        f"leaderboard.state != {server.BoardStateEnum.CREATED}": htmlgen.wrap_tag(
+                            "td",
+                            htmlgen.jinja_if_block(
+                                {
+                                    "team.complete": htmlgen.jinja_expression(
+                                        "(team.end_time - leaderboard.start_time)|round(3)",
+                                    ),
+                                    f"leaderboard.state == {server.BoardStateEnum.COMPLETED}": "Did not finish",
+                                    "": stop_team_form,
+                                },
+                            ),
+                        ),
+                    },
+                ),
+            ),
+        ),
+    )
+
+    teams_table = htmlgen.jinja_table(
+        "Current Teams",
+        header_iterate=f"(('Place', 'Team Name') if leaderboard.state == {server.BoardStateEnum.CREATED} else ('Place', 'Team Name', 'Time'))",
+        body=teams_table_body,
+    )
+
+    no_teams = "\n".join(
+        (
+            htmlgen.wrap_tag(
+                "div",
+                "Current Teams",
+                block=False,
+                style="text-align:center",
+            ),
+            htmlgen.wrap_tag(
+                "p",
+                "There are no teams currently. Create one below.",
+                block=False,
+            ),
+        ),
+    )
+
+    teams_display = htmlgen.jinja_if_block(
+        {
+            "leaderboard.teams|length != 0": teams_table,
+            "": no_teams,
+        },
+    )
+
     create_team_form_content = htmlgen.input_field(
         "team_title",
         "Title",
@@ -415,34 +502,52 @@ def generate_leaderboard_get() -> str:
         "Create a New Team",
     )
 
-    table_body = htmlgen.jinja_table_row(
-        ("team",),
-        "leaderboard.teams",
-        "\n".join(
-            htmlgen.wrap_tag("td", element, block=False)
-            for element in (
-                htmlgen.jinja_expression("loop.index"),
-                htmlgen.jinja_expression("team.title | escape"),
-                htmlgen.jinja_expression("team.complete"),
-            )
-        ),
+    create_team_section = htmlgen.jinja_if_block(
+        {
+            f"leaderboard.state == {server.BoardStateEnum.CREATED}": htmlgen.contain_in_box(
+                create_team_form,
+            ),
+        },
     )
 
-    teams_table = htmlgen.jinja_table(
-        "Current Teams",
-        header_iterate="('Place', 'Team Name', 'Complete')",
-        body=table_body,
+    start_timer_form_content = htmlgen.input_field(
+        "start_leaderboard_timer",
+        None,
+        field_type="hidden",
+        attrs={"value": "true"},
     )
 
-    ##    contents = htmlgen.form(
-    ##        "settings_update",
-    ##        "insert form contents here",#htmlgen.jinja_expression("radios"),
-    ##        form_title=title,
-    ##    )
+    start_timer_form = htmlgen.form(
+        "start_timer",
+        start_timer_form_content,
+        "Start Timer",
+    )
+
+    stop_timer_form_content = htmlgen.input_field(
+        "stop_leaderboard_timer",
+        None,
+        field_type="hidden",
+        attrs={"value": "true"},
+    )
+
+    stop_timer_form = htmlgen.form(
+        "stop_timer",
+        stop_timer_form_content,
+        "Stop Timer",
+    )
+
+    timer_control_section = htmlgen.jinja_if_block(
+        {
+            f"leaderboard.state == {server.BoardStateEnum.CREATED} and leaderboard.teams": start_timer_form,
+            f"leaderboard.state == {server.BoardStateEnum.RUNNING}": stop_timer_form,
+        },
+    )
+
     html = "\n".join(
         (
-            htmlgen.contain_in_box(teams_table),
-            htmlgen.contain_in_box(create_team_form),
+            htmlgen.contain_in_box(teams_display),
+            create_team_section,
+            timer_control_section,
             htmlgen.tag("hr"),
             htmlgen.create_link(
                 "/",

@@ -1,0 +1,20 @@
+/ (main page)
+ - create new leaderboard with enterable name
+ - view leaderboard with given title
+
+
+leaderboard/{leaderboard-uuid}
+ - binary layout of two following
+ - if not started ticking yet
+   - add team title text entry box
+   - start ticking button
+ - if started ticking
+   - teams list with buttons for 'team completed'
+   - stop ticking button
+
+
+leaderboard on submit
+ - if not ticking
+   - handle add team or ticking start
+ - if ticking
+   - reorder list based on completion time
