@@ -217,7 +217,7 @@ class Team:
     id_: int
     title: str
     complete: bool = False
-    end_time: int = 0
+    end_time: float = 0
 
 
 class BoardStateEnum(IntEnum):
@@ -235,7 +235,7 @@ class Leaderboard:
     title: str
     state: BoardStateEnum = BoardStateEnum.CREATED
     teams: list[Team] = dataclasses.field(default_factory=list)
-    start_time: int = 0
+    start_time: float = 0
     next_team_id: int = 0
 
 
@@ -303,7 +303,9 @@ async def root_post() -> (
 
 @app.get("/leaderboard/<uuid:leaderboard_uuid>")
 @pretty_exception
-async def leaderboard_get(leaderboard_uuid: UUID) -> AsyncIterator[str]:
+async def leaderboard_get(
+    leaderboard_uuid: UUID,
+) -> AsyncIterator[str] | tuple[AsyncIterator[str], int]:
     """Leaderboard page get handling."""
     leaderboard = APP_DATA["leaderboards"].get(leaderboard_uuid)
 
@@ -331,7 +333,9 @@ def parse_int_or_none(value: str) -> int | None:
 
 @app.post("/leaderboard/<uuid:leaderboard_uuid>")
 @pretty_exception
-async def leaderboard_post(leaderboard_uuid: UUID) -> AsyncIterator[str]:
+async def leaderboard_post(
+    leaderboard_uuid: UUID,
+) -> tuple[AsyncIterator[str], int] | WerkzeugResponse:
     """Leaderboard page post handling."""
     leaderboard = APP_DATA["leaderboards"].get(leaderboard_uuid)
 
