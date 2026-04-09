@@ -4,7 +4,7 @@ set -ex
 
 ON_GITHUB_CI=true
 EXIT_STATUS=0
-PROJECT='sanescansrv'
+PROJECT='leaderboard'
 
 # If not running on Github's CI, discard the summaries
 if [ -z "${GITHUB_STEP_SUMMARY+x}" ]; then
