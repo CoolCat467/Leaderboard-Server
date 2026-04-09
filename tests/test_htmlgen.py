@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import pytest
-from sanescansrv import htmlgen
+
+from leaderboard import htmlgen
 
 
 def test_indent_single() -> None:
@@ -625,11 +626,9 @@ def test_jinja_block_required() -> None:
     assert (
         htmlgen.jinja_block(
             "title_here",
-            "hallos content",
             required=True,
         )
         == """{% block title_here required %}
-hallos content
 {% endblock title_here %}"""
     )
 
@@ -638,12 +637,10 @@ def test_jinja_block_required_scoped() -> None:
     assert (
         htmlgen.jinja_block(
             "title_here",
-            "hallos content",
             required=True,
             scoped=True,
         )
         == """{% block title_here scoped required %}
-hallos content
 {% endblock title_here %}"""
     )
 

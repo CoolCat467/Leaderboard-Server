@@ -6,12 +6,7 @@ set -ex -o pipefail
 echo "::group::Environment"
 uname -a
 env | sort
-PROJECT='sanescansrv'
-echo "::endgroup::"
-
-echo "::group::Install libsane"
-# Install libsane
-sudo apt-get update && sudo apt-get install -y libsane-dev
+PROJECT='leaderboard'
 echo "::endgroup::"
 
 

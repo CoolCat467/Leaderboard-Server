@@ -377,7 +377,7 @@ def form(
                 "value": submit_display,
             },
         )
-        html += f"<br>\n{submit}"
+        html += f"\n<br>\n{submit}"
     title = ""
     if form_title is not None:
         title = wrap_tag("b", form_title, block=False) + "\n"

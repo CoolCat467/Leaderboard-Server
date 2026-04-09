@@ -31,7 +31,7 @@ classifiers = [
     "Framework :: Trio",
     "Typing :: Typed",
 ]
-keywords = ["scanner", "sane", "server", "frontend"]
+keywords = ["leaderboard", "server", "frontend"]
 dependencies = [
     "hypercorn[trio]~=0.18.0",
     "quart~=0.20.0",
@@ -46,8 +46,8 @@ dependencies = [
 version = {attr = "leaderboard.server.__version__"}
 
 [project.urls]
-"Source" = "https://github.com/CoolCat467/Scanner-Server"
-"Bug Tracker" = "https://github.com/CoolCat467/Scanner-Server/issues"
+"Source" = "https://github.com/CoolCat467/Leaderboard-Server"
+"Bug Tracker" = "https://github.com/CoolCat467/Leaderboard-Server/issues"
 
 [project.scripts]
 leaderboard_server = "leaderboard:run"

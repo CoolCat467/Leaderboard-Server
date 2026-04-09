@@ -45,19 +45,22 @@
   <b>Create a New Team</b>
   <form name="create_team" method="post">
     <label for="team_title">Title</label>
-    <input id="team_title" name="team_title" size="30" maxlength="30" required="true"><br>
+    <input id="team_title" name="team_title" size="30" maxlength="30" required="true">
+    <br>
     <input type="submit" id="create_team_submit_button" name="create_team_submit_button" value="Create">
   </form>
 </div>
 {% endif %}
 {% if leaderboard.state == 0 and leaderboard.teams %}
 <form name="start_timer" method="post">
-  <input type="hidden" id="start_leaderboard_timer" name="start_leaderboard_timer" value="true"><br>
+  <input type="hidden" id="start_leaderboard_timer" name="start_leaderboard_timer" value="true">
+  <br>
   <input type="submit" id="start_timer_submit_button" name="start_timer_submit_button" value="Start Timer">
 </form>
 {% elif leaderboard.state == 1 %}
 <form name="stop_timer" method="post">
-  <input type="hidden" id="stop_leaderboard_timer" name="stop_leaderboard_timer" value="true"><br>
+  <input type="hidden" id="stop_leaderboard_timer" name="stop_leaderboard_timer" value="true">
+  <br>
   <input type="submit" id="stop_timer_submit_button" name="stop_timer_submit_button" value="Stop Timer">
 </form>
 {% endif %}

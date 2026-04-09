@@ -1,6 +1,6 @@
-import sanescansrv
+import leaderboard
 
 
 def test_has_run() -> None:
-    assert hasattr(sanescansrv, "run")
-    assert callable(sanescansrv.run)
+    assert hasattr(leaderboard, "run")
+    assert callable(leaderboard.run)

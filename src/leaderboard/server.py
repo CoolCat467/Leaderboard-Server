@@ -38,7 +38,7 @@ from collections.abc import (
     Iterable,
 )
 from enum import IntEnum, auto
-from os import getenv, path
+from os import getenv, makedirs, path
 from typing import TYPE_CHECKING, Final, TypedDict, TypeVar
 from uuid import UUID, uuid4
 
@@ -49,8 +49,6 @@ from quart import request
 from quart.templating import stream_template
 from quart_trio import QuartTrio
 from werkzeug.exceptions import HTTPException
-
-from leaderboard import logger
 
 if sys.version_info < (3, 11):
     import tomli as tomllib
@@ -74,9 +72,6 @@ FILE_TITLE: Final = __title__.lower().replace(" ", "-").replace("-", "_")
 CONFIG_PATH: Final = XDG_CONFIG_HOME / FILE_TITLE
 DATA_PATH: Final = XDG_DATA_HOME / FILE_TITLE
 MAIN_CONFIG: Final = CONFIG_PATH / "config.toml"
-
-logger.set_title(__title__)
-
 
 T = TypeVar("T")
 
@@ -578,12 +573,22 @@ use_reloader = false
 
 def run() -> None:
     """Run scanner server."""
-    if path.exists(MAIN_CONFIG):
+    if "--create-default-config" in sys.argv[1:]:
+        print(
+            f"Creating/overwriting configuration file located at {str(MAIN_CONFIG)!r} with default...",
+        )
+        if not path.exists(CONFIG_PATH):
+            makedirs(CONFIG_PATH)
+
         with open(MAIN_CONFIG, "w", encoding="utf-8") as fp:
             fp.write(
                 DEFAULT_CONFIG_TOML,
             )
 
+        print("Action complete.")
+        return
+
+    if path.exists(MAIN_CONFIG):
         print(f"Reading configuration file {str(MAIN_CONFIG)!r}...\n")
 
         with open(MAIN_CONFIG, "rb") as fp:
@@ -592,8 +597,6 @@ def run() -> None:
         print(
             f"Configuration file {str(MAIN_CONFIG)!r} not found, loading default.",
         )
-        ##        if not path.exists(CONFIG_PATH):
-        ##            makedirs(CONFIG_PATH)
         config = tomllib.loads(DEFAULT_CONFIG_TOML)
 
     main_section = config.get("main", {})
@@ -604,8 +607,7 @@ def run() -> None:
     hypercorn: dict[str, object] = config.get("hypercorn", {})
 
     ip_address: str | None = None
-    ##    if "--local" in sys.argv[1:]:
-    if True:
+    if "--local" in sys.argv[1:]:
         ip_address = "127.0.0.1"
 
     run_server(
