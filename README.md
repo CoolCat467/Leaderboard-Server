@@ -26,9 +26,12 @@ pip install git+https://github.com/CoolCat467/Leaderboard-Server.git
 ```console
 leaderboard_server
 ```
+Run with `--help` to see full optional arguments list.
+
 
 ## Usage
-Go to URL `http://<IP_of_host>:3004`
+Go to URL `http://<IP_of_host>:3004`, which will be shown in the console
+as the server starts up.
 
 
 ## Configuration
@@ -73,6 +76,7 @@ For my installation, I ended up [installing it with pip](https://pypi.org/projec
 * Source Code - https://github.com/CoolCat467/Leaderboard-Server.git
 * Issues      - https://github.com/CoolCat467/Leaderboard-Server/issues
 
+
 ### License
--------
+-----------
 Code and documentation are available according to the GNU General Public License v3.0 (see [LICENSE](https://github.com/CoolCat467/Leaderboard-Server/blob/HEAD/LICENSE)).
