@@ -24,6 +24,7 @@ __version__ = "0.0.0"
 __license__ = "GNU General Public License Version 3"
 
 
+import argparse
 import dataclasses
 import functools
 import math
@@ -549,7 +550,7 @@ def run_server(
             raise
 
 
-DEFAULT_CONFIG_TOML = """[main]
+DEFAULT_CONFIG_TOML: Final = """[main]
 # Port server should run on.
 # You might want to consider changing this to 80
 port = 3004
@@ -573,7 +574,29 @@ use_reloader = false
 
 def run() -> None:
     """Run scanner server."""
-    if "--create-default-config" in sys.argv[1:]:
+    parser = argparse.ArgumentParser(
+        description=" Simple website to create and view leaderboards. ",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"{__title__} v{__version__}",
+        help="Show the program version and exit.",
+    )
+    parser.add_argument(
+        "--create-default-config",
+        action="store_true",
+        help="Create or overwrite the default configuration file.",
+    )
+    parser.add_argument(
+        "--local",
+        action="store_true",
+        help="Bind to localhost (127.0.0.1) instead of public ip address.",
+    )
+
+    args = parser.parse_args()
+
+    if args.create_default_config:
         print(
             f"Creating/overwriting configuration file located at {str(MAIN_CONFIG)!r} with default...",
         )
@@ -581,9 +604,7 @@ def run() -> None:
             makedirs(CONFIG_PATH)
 
         with open(MAIN_CONFIG, "w", encoding="utf-8") as fp:
-            fp.write(
-                DEFAULT_CONFIG_TOML,
-            )
+            fp.write(DEFAULT_CONFIG_TOML)
 
         print("Action complete.")
         return
@@ -607,7 +628,7 @@ def run() -> None:
     hypercorn: dict[str, object] = config.get("hypercorn", {})
 
     ip_address: str | None = None
-    if "--local" in sys.argv[1:]:
+    if args.local:
         ip_address = "127.0.0.1"
 
     run_server(
