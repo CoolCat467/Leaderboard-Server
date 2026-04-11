@@ -1,6 +1,6 @@
-"""Scanner Web Server - Website to talk to SANE scanners.
+"""Leaderboard Web Server - Simple website to create and view leaderboards.
 
-Copyright (C) 2022-2024  CoolCat467
+Copyright (C) 2026  CoolCat467
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,22 +20,17 @@ from __future__ import annotations
 
 __title__ = "Leaderboard Webserver"
 __author__ = "CoolCat467"
-__version__ = "0.0.0"
+__version__ = "0.1.0"
 __license__ = "GNU General Public License Version 3"
 
 
 import argparse
 import dataclasses
-import functools
 import math
-import socket
 import sys
 import time
-import traceback
 from collections.abc import (
     AsyncIterator,
-    Awaitable,
-    Callable,
     Iterable,
 )
 from enum import IntEnum, auto
@@ -49,7 +44,13 @@ from hypercorn.trio import serve
 from quart import request
 from quart.templating import stream_template
 from quart_trio import QuartTrio
-from werkzeug.exceptions import HTTPException
+
+from leaderboard.elapsed import combine_end
+from leaderboard.server_utils import (
+    find_ip,
+    get_exception_page,
+    pretty_exception,
+)
 
 if sys.version_info < (3, 11):
     import tomli as tomllib
@@ -75,135 +76,6 @@ DATA_PATH: Final = XDG_DATA_HOME / FILE_TITLE
 MAIN_CONFIG: Final = CONFIG_PATH / "config.toml"
 
 T = TypeVar("T")
-
-
-def combine_end(data: Iterable[str], final: str = "and") -> str:
-    """Return comma separated string of list of strings with last item phrased properly."""
-    data = list(data)
-    if len(data) >= 2:
-        data[-1] = f"{final} {data[-1]}"
-    if len(data) > 2:
-        return ", ".join(data)
-    return " ".join(data)
-
-
-async def send_error(
-    page_title: str,
-    error_body: str,
-    return_link: str | None = None,
-) -> AsyncIterator[str]:
-    """Stream error page."""
-    return await stream_template(
-        "error_page.html.jinja",
-        page_title=page_title,
-        error_body=error_body,
-        return_link=return_link,
-    )
-
-
-async def get_exception_page(
-    code: int,
-    name: str,
-    desc: str,
-    return_link: str | None = None,
-) -> tuple[AsyncIterator[str], int]:
-    """Return Response for exception."""
-    resp_body = await send_error(
-        page_title=f"{code} {name}",
-        error_body=desc,
-        return_link=return_link,
-    )
-    return (resp_body, code)
-
-
-def pretty_exception_name(exc: BaseException) -> str:
-    """Make exception into pretty text (split by spaces)."""
-    exc_str, reason = repr(exc).split("(", 1)
-    reason = reason[1:-2]
-    words = []
-    last = 0
-    for idx, char in enumerate(exc_str):
-        if char.islower():
-            continue
-        word = exc_str[last:idx]
-        if not word:
-            continue
-        words.append(word)
-        last = idx
-    words.append(exc_str[last:])
-    error = " ".join(w for w in words if w not in {"Error", "Exception"})
-    return f"{error} ({reason})"
-
-
-def pretty_exception(
-    function: Callable[PS, Awaitable[T]],
-) -> Callable[PS, Awaitable[T | tuple[AsyncIterator[str], int]]]:
-    """Make exception pages pretty."""
-
-    @functools.wraps(function)
-    async def wrapper(  # type: ignore[misc]
-        *args: PS.args,
-        **kwargs: PS.kwargs,
-    ) -> T | tuple[AsyncIterator[str], int]:
-        code = 500
-        name = "Exception"
-        desc = (
-            "The server encountered an internal error and "
-            + "was unable to complete your request. "
-            + "Either the server is overloaded or there is an error "
-            + "in the application."
-        )
-        try:
-            return await function(*args, **kwargs)
-        except Exception as exception:
-            # traceback.print_exception changed in 3.10
-            traceback.print_exception(exception)
-
-            if isinstance(exception, HTTPException):
-                code = exception.code or code
-                desc = exception.description or desc
-                name = exception.name or name
-            else:
-                exc_name = pretty_exception_name(exception)
-                name = f"Internal Server Error ({exc_name})"
-
-        return await get_exception_page(
-            code,
-            name,
-            desc,
-        )
-
-    return wrapper
-
-
-# Stolen from WOOF (Web Offer One File), Copyright (C) 2004-2009 Simon Budig,
-# available at http://www.home.unix-ag.org/simon/woof
-# with modifications
-
-# Utility function to guess the IP (as a string) where the server can be
-# reached from the outside. Quite nasty problem actually.
-
-
-def find_ip() -> str:
-    """Guess the IP where the server can be found from the network."""
-    # we get a UDP-socket for the TEST-networks reserved by IANA.
-    # It is highly unlikely, that there is special routing used
-    # for these networks, hence the socket later should give us
-    # the IP address of the default route.
-    # We're doing multiple tests, to guard against the computer being
-    # part of a test installation.
-
-    candidates: list[str] = []
-    for test_ip in ("192.0.2.0", "198.51.100.0", "203.0.113.0"):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.connect((test_ip, 80))
-        ip_addr: str = sock.getsockname()[0]
-        sock.close()
-        if ip_addr in candidates:
-            return ip_addr
-        candidates.append(ip_addr)
-
-    return candidates[0]
 
 
 @dataclasses.dataclass
