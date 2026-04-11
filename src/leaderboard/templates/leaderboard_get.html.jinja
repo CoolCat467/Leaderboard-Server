@@ -20,7 +20,7 @@
         {% if leaderboard.state != 0 %}
         <td>
           {% if team.complete %}
-          {{ (team.end_time - leaderboard.start_time)|round(3) }}
+          {{ get_elapsed(team.end_time - leaderboard.start_time) }}
           {% elif leaderboard.state == 2 %}
           Did not finish
           {% else %}

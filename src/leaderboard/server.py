@@ -45,7 +45,7 @@ from quart import request
 from quart.templating import stream_template
 from quart_trio import QuartTrio
 
-from leaderboard.elapsed import combine_end
+from leaderboard.elapsed import combine_end, get_elapsed
 from leaderboard.server_utils import (
     find_ip,
     get_exception_page,
@@ -188,6 +188,7 @@ async def leaderboard_get(
     return await stream_template(
         "leaderboard_get.html.jinja",
         leaderboard=leaderboard,
+        get_elapsed=get_elapsed,
     )
 
 
@@ -284,7 +285,7 @@ async def leaderboard_post(
 
     if leaderboard_timer_start:
         assert leaderboard.state == BoardStateEnum.CREATED
-        leaderboard.start_time = time.perf_counter()
+        leaderboard.start_time = time.time()
         leaderboard.state = BoardStateEnum.RUNNING
 
     elif leaderboard_timer_stop:
@@ -300,7 +301,7 @@ async def leaderboard_post(
         assert leaderboard.state == BoardStateEnum.RUNNING
         team = leaderboard.teams[team_complete_index]
 
-        team.end_time = time.perf_counter()
+        team.end_time = time.time()
         team.complete = True
 
         leaderboard.teams.sort(

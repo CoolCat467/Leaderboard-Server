@@ -443,7 +443,7 @@ def generate_leaderboard_get() -> str:
                             htmlgen.jinja_if_block(
                                 {
                                     "team.complete": htmlgen.jinja_expression(
-                                        "(team.end_time - leaderboard.start_time)|round(3)",
+                                        "get_elapsed(team.end_time - leaderboard.start_time)",
                                     ),
                                     f"leaderboard.state == {server.BoardStateEnum.COMPLETED}": "Did not finish",
                                     "": stop_team_form,
