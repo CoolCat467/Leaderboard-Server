@@ -448,7 +448,7 @@ use_reloader = false
 def run() -> None:
     """Run scanner server."""
     parser = argparse.ArgumentParser(
-        description=" Simple website to create and view leaderboards. ",
+        description="Simple website to create and view leaderboards. ",
     )
     parser.add_argument(
         "--version",
