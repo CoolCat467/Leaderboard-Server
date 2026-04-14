@@ -57,14 +57,14 @@ tests = [
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "pytest-trio>=0.8.0",
-    "coverage>=7.2.5",
 ]
 tools = [
-    "uv>=0.10.2",
-    "mypy>=1.20.0",
-    "ruff>=0.15.0",
-    "codespell>=2.3.0",
-    "pre-commit>=4.2.0",
+    "uv>=0.11.6",
+    "mypy>=1.20.1",
+    "ruff>=0.15.10",
+    "codespell>=2.4.2",
+    "pre-commit>=4.5.1",
+    "attrs>=26.1.0",
 ]
 
 [tool.setuptools.package-data]
@@ -75,7 +75,7 @@ package = true
 
 [tool.mypy]
 files = [
-    "src/leaderboard/",
+    "src",
     "tests",
 ]
 check_untyped_defs = true
@@ -161,21 +161,17 @@ extend-ignore = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov-report=xml --cov-report=term-missing --cov=leaderboard"
+addopts = "--cov-report=term-missing --cov=leaderboard"
 testpaths = [
     "tests",
 ]
 
 [tool.coverage.run]
 branch = true
-source_pkgs = ["leaderboard"]
 omit = [
     "__init__.py",
     "generate_pages.py",
 ]
-parallel = true
-relative_files = true
-source = ["."]
 
 [tool.coverage.report]
 precision = 1
