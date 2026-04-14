@@ -1,4 +1,4 @@
-"""Unit tests for leaderboard.server_utils module."""
+"""Unit tests for server_utils module."""
 
 from __future__ import annotations
 

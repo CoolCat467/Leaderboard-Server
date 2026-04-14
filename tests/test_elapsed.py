@@ -1,4 +1,4 @@
-"""Unit tests for leaderboard.elapsed module."""
+"""Unit tests for elapsed module."""
 
 from __future__ import annotations
 
